@@ -119,7 +119,7 @@ def total_time(start_time, end_time):
 
 if __name__ == "__main__":
     logger.add('wjx_{0}.log'.format(time.strftime("%Y-%m-%d", time.localtime())), encoding="utf-8",rotation='100 MB')
-    cunt = 100                 ## 调查的问卷数
+    cunt = 1000                 ## 调查的问卷数
     start_t = time.perf_counter()
     for i in range(cunt):
         _main(i)
