@@ -1,3 +1,5 @@
+## 测试网址：https://www.wjx.cn/vj/PXdr0lQ.aspx
+
 from selenium import webdriver
 from selenium.webdriver import ActionChains, Firefox
 import random, time
@@ -17,7 +19,7 @@ driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {'source': 'Obje
 
 def _main(count_):
 
-    driver.get('https://www.wjx.cn/vm/PpCZPQT.aspx')        ## 打开网址
+    driver.get('https://www.wjx.cn/vj/PXdr0lQ.aspx')        ## 打开网址
     answers = driver.find_elements_by_css_selector('.ui-field-contain')         ## 找到所有的题目及选项
     print("______________________________________________________________________________")
     logger.info('第{0}个人进行问卷调查'.format(int(count_) + 1))
