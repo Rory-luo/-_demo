@@ -1,0 +1,67 @@
+
+
+from selenium import webdriver
+import random, time
+from loguru import logger
+
+option = webdriver.ChromeOptions()
+option.binary_location = r'C:\Program Files\Google\Chrome\Application\chrome.exe'     ## Specified the chrome location
+driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')  ## load the driver location
+
+## 禁止chrome的反爬虫机制阻止最后结果的提交
+option.add_experimental_option('excludeSwitches', ['enable-automation'])
+option.add_experimental_option('useAutomationExtension', False)
+driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {'source': 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'})
+
+def _main(count_):
+    print(time.time())
+    driver.get('https://www.wjx.cn/vj/PXdr0lQ.aspx')        ## 打开网址
+    answers = driver.find_elements_by_css_selector('.div_question')         ## 找到所有的题目及选项
+    print("______________________________________________________________________________")
+    logger.info('第{0}个人进行问卷调查'.format(int(count_) + 1))
+    for i in range(len(answers)):
+        try:
+            answer = answers[i]
+            ####先滑到标签再去点击
+            driver.execute_script("arguments[0].scrollIntoView();", answer)
+            ### 找到标签
+            ans = answer.find_elements_by_css_selector('label')
+            if '【多选题】' not in answer.text:
+                random.choice(ans).click()
+            else:
+                for cishu in range(3):
+                    random.choice(ans).click()
+            logger.debug("\t完成第{0}道题".format(int(i) + 1))
+        except Exception as e:
+            logger.error(F'{e}')
+
+    am = driver.find_element_by_class_name('submitbutton')
+    am.click()                              ## 所有的题选择完毕后点击提交
+    driver.find_elements_by_class_name('mainBgColor')[-1].click()           ## 弹窗显示“智能验证”
+    driver.find_elements_by_class_name('sm-ico-wave')[-1].click()           ## 点击最后一步验证
+    logger.info("第{0}个人完成问卷并提交".format(int(count_) + 1))
+    time.sleep(10)
+    cur_url = driver.current_url                                            ## 获取提交问卷结束后的网址
+    index = cur_url.split('index=')[-1].split('&comsign')[0]                ## 获取在此时的问卷总数
+    logger.info(F'第{index}份问卷')
+    time.sleep(1)
+
+def total_time(start_time, end_time):
+    all = end_time - start_time
+    hour = int(all / 3600)
+    minute = int((all - hour * 3600) / 60)
+    second = all - hour * 3600 - minute * 60
+    return hour, minute, second
+
+if __name__ == "__main__":
+    logger.add('wjx_{0}.log'.format(time.strftime("%Y-%m-%d", time.localtime())), encoding="utf-8",rotation='100 MB')
+    cunt = 1000                ##  需要调查的问卷数
+    start_t = time.perf_counter()
+    for i in range(cunt):
+        _main(i)
+    driver.quit()
+    end_t = time.perf_counter()
+    h, m, s = total_time(start_t, end_t)
+    print("______________________________________________________________________________")
+    logger.info('共收回问卷 {0} 份'.format(cunt))
+    logger.info('共用时 {0} 时 {1} 分 {2} 秒'.format(h, m, s))
