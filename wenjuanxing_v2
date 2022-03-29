@@ -1,0 +1,129 @@
+from selenium import webdriver
+from selenium.webdriver import ActionChains, Firefox
+import random, time
+from loguru import logger
+
+# option = webdriver.FirefoxOptions()
+# driver = Firefox()
+# option.add_argument('options.add_argument("--disable-blink-features=AutomationControlled")')
+option = webdriver.ChromeOptions()
+option.binary_location = r'C:\Program Files\Google\Chrome\Application\chrome.exe'     ## Specified the chrome location
+driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')  ## load the driver location
+#
+# 禁止chrome的反爬虫机制阻止最后结果的提交
+option.add_experimental_option('excludeSwitches', ['enable-automation'])
+option.add_experimental_option('useAutomationExtension', False)
+driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {'source': 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'})
+
+def _main(count_):
+
+    driver.get('https://www.wjx.cn/vm/PpCZPQT.aspx')        ## 打开网址
+    answers = driver.find_elements_by_css_selector('.ui-field-contain')         ## 找到所有的题目及选项
+    print("______________________________________________________________________________")
+    logger.info('第{0}个人进行问卷调查'.format(int(count_) + 1))
+    for i in range(len(answers)):
+        try:
+            answer = answers[i]
+            ####先滑到标签再去点击
+            driver.execute_script("arguments[0].scrollIntoView();", answer)
+            ### 找到标签
+            ans = answer.find_elements_by_class_name('label')
+            if '【请选择1-3项】' in answer.text:
+                for cishu in range(3):
+                    random.choice(ans).click()
+            elif '【请选择1-2项】' in answer.text:
+                for cishu in range(3):
+                    random.choice(ans).click()
+                try:
+                    am = driver.find_element_by_class_name('mainColor')
+                    if am:
+                        am.click()
+                except:
+                    """"""
+            else:
+                random.choice(ans).click()
+            logger.debug("\t完成第{0}道题".format(int(i) + 1))
+        except Exception as e:
+            logger.error(F'{e}')
+
+    driver.find_element_by_class_name('submitbtn').click()
+    time.sleep(3)
+    try:
+        # driver.find_elements_by_class_name('mainColor')[-1].click()     ## 弹窗“请点击智能验证码进行验证”
+        # time.sleep(3)
+        driver.find_element_by_class_name('rect-top').click()
+
+        try:
+            huakuai = driver.find_element_by_id('nc_1_n1z')
+            time.sleep(1)
+            move_to_gap(huakuai, get_track(340))
+            time.sleep(1)
+            driver.find_elements_by_class_name('mainColor')[-1].click()  ## 弹窗“请点击智能验证码进行验证”
+            time.sleep(1)
+        except Exception as e:
+            """"""
+    except Exception as e:
+        logger.error(F'{e}')
+
+    logger.info("第{0}个人完成问卷并提交".format(int(count_) + 1))
+    time.sleep(10)
+    cur_url = driver.current_url
+    index = cur_url.split('index=')[-1].split('&comsign')[0]
+    logger.info(F"次数为：{index}")
+    driver.delete_all_cookies()
+
+def get_track(distance):      # distance为传入的总距离
+    # 移动轨迹
+    track=[]
+    # 当前位移
+    current=0
+    # 减速阈值
+    mid=distance*4/5
+    # 计算间隔
+    t=0.2
+    # 初速度
+    v=1
+
+    while current<distance:
+        if current<mid:
+            # 加速度为2
+            a=4
+        else:
+            # 加速度为-2
+            a=-3
+        v0=v
+        # 当前速度
+        v=v0+a*t
+        # 移动距离
+        move=v0*t+1/2*a*t*t
+        # 当前位移
+        current+=move
+        # 加入轨迹
+        track.append(round(move))
+    return track
+def move_to_gap(slider,tracks):     # slider是要移动的滑块,tracks是要传入的移动轨迹
+    ActionChains(driver).click_and_hold(slider).perform()
+    for x in tracks:
+        ActionChains(driver).move_by_offset(xoffset=x,yoffset=0).perform()
+    time.sleep(0.5)
+    ActionChains(driver).release().perform()
+
+def total_time(start_time, end_time):
+    all = end_time - start_time
+    hour = int(all / 3600)
+    minute = int((all - hour * 3600) / 60)
+    second = all - hour * 3600 - minute * 60
+    return hour, minute, second
+
+if __name__ == "__main__":
+    logger.add('wjx_{0}.log'.format(time.strftime("%Y-%m-%d", time.localtime())), encoding="utf-8",rotation='100 MB')
+    cunt = 100                 ## 调查的问卷数
+    start_t = time.perf_counter()
+    for i in range(cunt):
+        _main(i)
+    driver.quit()
+    end_t = time.perf_counter()
+    h, m, s = total_time(start_t, end_t)
+    print("______________________________________________________________________________")
+    logger.info('共收回问卷 {0} 份'.format(cunt))
+    logger.info('共用时 {0} 时 {1} 分 {2} 秒'.format(h, m, s))
