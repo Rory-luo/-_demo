@@ -6,3 +6,6 @@
 
 
 # 此代码因为涉及到大量数据，所以需要设置IP池，但在此代码里面未涉及，由于时间关系，没有进行IP池的代码的写入，如有兴趣，请补充并mail给 rorywechat@gmail.com， 谢谢！
+
+
+## IP池的设置，参考网址：https://www.songbingjia.com/html/show-33576.html
